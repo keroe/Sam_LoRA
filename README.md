@@ -1,16 +1,13 @@
 # LoRA for SAM (meta's segment-anything)
 
 ## Usage
-```
-from segment_anything import build_sam, SamAutomaticMaskGenerator 
-from segment_anything import sam_model_registry
-from sam_lora import LoRA_Sam
-import torch
-sam = sam_model_registry["vit_b"](checkpoint="sam_vit_b_01ec64.pth")
-lora_sam = LoRA_Sam(sam,r = 4)
-result = lora_sam.sam.image_encoder(torch.rand(size=(1,3,1024,1024)))
-print(result.shape)
-```
+1. Create a conda environment and install pytorch as described [here](https://pytorch.org/get-started/locally/)
+2. run `pip install .` or `pip install -e .`
+3. Get the model checkpoints [here](https://github.com/facebookresearch/segment-anything/tree/main?tab=readme-ov-file#model-checkpoints) or run   
+`mkdir pretrained_weights &&  wget -P pretrained_weights https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth`
+
+### Example
+See the [test](./scripts/test_lora.py)
 
 ## Train
 Coming soon and welcome pull request.
