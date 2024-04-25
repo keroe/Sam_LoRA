@@ -1,14 +1,9 @@
 # Sheng Wang at Apr 6 2023
 # What a time to be alive (first half of 2023)
 
-from segment_anything import build_sam, SamPredictor
-from segment_anything import sam_model_registry
-
 import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch import Tensor
 from torch.nn.parameter import Parameter
 from segment_anything.modeling import Sam
 from safetensors import safe_open
@@ -47,6 +42,7 @@ class _LoRA_qkv(nn.Module):
         qkv[:, :, :, : self.dim] += new_q
         qkv[:, :, :, -self.dim :] += new_v
         return qkv
+
 
 class LoRA_Sam(nn.Module):
     """Applies low-rank adaptation to a Sam model's image encoder.
@@ -129,7 +125,7 @@ class LoRA_Sam(nn.Module):
         r"""Only safetensors is supported now.
 
         pip install safetensor if you do not have one installed yet.
-        
+
         save both lora and fc parameters.
         """
 
@@ -138,11 +134,11 @@ class LoRA_Sam(nn.Module):
         num_layer = len(self.w_As)  # actually, it is half
         a_tensors = {f"w_a_{i:03d}": self.w_As[i].weight for i in range(num_layer)}
         b_tensors = {f"w_b_{i:03d}": self.w_Bs[i].weight for i in range(num_layer)}
-        
+
         _in = self.lora_vit.head.in_features
         _out = self.lora_vit.head.out_features
         fc_tensors = {f"fc_{_in}in_{_out}out": self.lora_vit.head.weight}
-        
+
         merged_dict = {**a_tensors, **b_tensors, **fc_tensors}
         save_file(merged_dict, filename)
 
@@ -166,7 +162,7 @@ class LoRA_Sam(nn.Module):
                 saved_key = f"w_b_{i:03d}"
                 saved_tensor = f.get_tensor(saved_key)
                 w_B_linear.weight = Parameter(saved_tensor)
-                
+
             _in = self.lora_vit.head.in_features
             _out = self.lora_vit.head.out_features
             saved_key = f"fc_{_in}in_{_out}out"
@@ -181,12 +177,3 @@ class LoRA_Sam(nn.Module):
             nn.init.kaiming_uniform_(w_A.weight, a=math.sqrt(5))
         for w_B in self.w_Bs:
             nn.init.zeros_(w_B.weight)
-
-    # def forward(self, x: Tensor) -> Tensor:
-    #     return self.lora_vit(x)
-
-
-if __name__ == "__main__":
-    sam = sam_model_registry["vit_b"](checkpoint="sam_vit_b_01ec64.pth")
-    lora_sam = LoRA_Sam(sam,4)
-    lora_sam.sam.image_encoder(torch.rand(size=(1,3,1024,1024)))
